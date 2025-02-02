@@ -21,6 +21,9 @@ float phi_acc_F_new = 0;
 float theta_gyr_M = 0;
 float phi_gyr_M = 0;
 
+float theta_overall = 0;
+float phi_overall = 0;
+
 float dt;
 unsigned long millis_old = 0;
 
@@ -49,9 +52,11 @@ myIMU.getCalibration(&system, &gyro, &accel, &mag);
 imu::Vector<3> acc =myIMU.getVector(Adafruit_BNO055::VECTOR_ACCELEROMETER);
 imu::Vector<3> gyr =myIMU.getVector(Adafruit_BNO055::VECTOR_GYROSCOPE);
 
-// Lesson no 7: implemented loww pass filter
 theta_acc_M = atan2(acc.x()/9.8, acc.z()/9.8) * 180 / PI;
 phi_acc_M = atan2(acc.y()/9.8, acc.z()/9.8) * 180 / PI;
+
+
+// Lesson no 7: implemented loww pass filter
 theta_acc_F_new = p1*theta_acc_F_old + p2*theta_acc_M;    
 phi_acc_F_new = p1*phi_acc_F_old + p2*phi_acc_M;
 
@@ -62,6 +67,12 @@ millis_old = millis();
 
 theta_gyr_M = theta_gyr_M + gyr.y()*dt;
 phi_gyr_M = phi_gyr_M + gyr.x()*dt;
+
+
+//Lesson no 9: Complimentary Filter
+theta_overall = (theta_overall - gyr.y()*dt) * p1  + theta_acc_M * p2;
+phi_overall = (phi_overall + gyr.x()*dt) * p1  + phi_acc_M * p2;
+
 
 
 
@@ -81,6 +92,8 @@ Serial.print(mag);
 Serial.print(",");
 Serial.print(system);
 Serial.print(",");
+
+
 Serial.print(theta_acc_M);
 Serial.print(",");
 Serial.print(theta_acc_F_new);
@@ -92,7 +105,12 @@ Serial.print(phi_acc_F_new);
 Serial.print(",");
 Serial.print(-1 *theta_gyr_M);
 Serial.print(",");
-Serial.println(phi_gyr_M);
+Serial.print(phi_gyr_M);
+
+Serial.print(",");
+Serial.print(theta_overall);
+Serial.print(",");
+Serial.println(phi_overall);
 
 theta_acc_F_old = theta_acc_F_new;      
 phi_acc_F_old = phi_acc_F_new;
