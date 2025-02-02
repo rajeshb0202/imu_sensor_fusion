@@ -8,12 +8,23 @@
  
 Adafruit_BNO055 myIMU = Adafruit_BNO055();
 
-float theta_M= 0;
-float phi_M=0;
-float theta_F_old = 0;
-float theta_F_new = 0;
-float phi_F_old = 0;
-float phi_F_new = 0;
+//accelerometer related variables
+float theta_acc_M= 0;               //theta_acc_M is the measured angle of inclination of the accelerometer with respect to the x-axis
+float phi_acc_M=0;                 //phi_acc_M is the measured angle of inclination of the accelerometer with respect to the y-axis
+float theta_acc_F_old = 0;          //theta_acc_F_old is the filtered angle of inclination of the accelerometer with respect to the x-axis
+float theta_acc_F_new = 0;
+float phi_acc_F_old = 0;
+float phi_acc_F_new = 0;
+
+
+//filter related variables
+float theta_gyr_M = 0;
+float phi_gyr_M = 0;
+
+float dt;
+unsigned long millis_old = 0;
+
+
 
 float p1 = 0.95;
 float p2 = 1 - p1;
@@ -27,6 +38,7 @@ myIMU.begin();
 delay(1000);
 int8_t temp=myIMU.getTemp();
 myIMU.setExtCrystalUse(true);
+millis_old = millis();
 }
  
 void loop() {
@@ -35,14 +47,23 @@ uint8_t system, gyro, accel, mag = 0;
 myIMU.getCalibration(&system, &gyro, &accel, &mag);
 
 imu::Vector<3> acc =myIMU.getVector(Adafruit_BNO055::VECTOR_ACCELEROMETER);
+imu::Vector<3> gyr =myIMU.getVector(Adafruit_BNO055::VECTOR_GYROSCOPE);
 
-theta_M = atan2(acc.x()/9.8, acc.z()/9.8) * 180 / PI;
-phi_M = atan2(acc.y()/9.8, acc.z()/9.8) * 180 / PI;
+// Lesson no 7: implemented loww pass filter
+theta_acc_M = atan2(acc.x()/9.8, acc.z()/9.8) * 180 / PI;
+phi_acc_M = atan2(acc.y()/9.8, acc.z()/9.8) * 180 / PI;
+theta_acc_F_new = p1*theta_acc_F_old + p2*theta_acc_M;    
+phi_acc_F_new = p1*phi_acc_F_old + p2*phi_acc_M;
 
 
+//Lesson no 8: Gyroscope
+dt = (millis() - millis_old)/1000.;
+millis_old = millis();
 
-theta_F_new = p1*theta_F_old + p2*theta_M;
-phi_F_new = p1*phi_F_old + p2*phi_M;
+theta_gyr_M = theta_gyr_M + gyr.y()*dt;
+phi_gyr_M = phi_gyr_M + gyr.x()*dt;
+
+
 
 
 Serial.print(acc.x()/9.8);
@@ -60,16 +81,21 @@ Serial.print(mag);
 Serial.print(",");
 Serial.print(system);
 Serial.print(",");
-Serial.print(theta_M);
+Serial.print(theta_acc_M);
 Serial.print(",");
-Serial.print(theta_F_new);
+Serial.print(theta_acc_F_new);
 Serial.print(",");
-Serial.print(phi_M);
+Serial.print(phi_acc_M);
 Serial.print(",");
-Serial.println(phi_F_new);
+Serial.print(phi_acc_F_new);
 
-theta_F_old = theta_F_new;
-phi_F_old = phi_F_new;
+Serial.print(",");
+Serial.print(-1 *theta_gyr_M);
+Serial.print(",");
+Serial.println(phi_gyr_M);
+
+theta_acc_F_old = theta_acc_F_new;      
+phi_acc_F_old = phi_acc_F_new;
 
  
 delay(BNO055_SAMPLERATE_DELAY_MS);
