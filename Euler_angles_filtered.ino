@@ -17,9 +17,16 @@ float phi_acc_F_old = 0;
 float phi_acc_F_new = 0;
 
 
-//filter related variables
+//gyroscope related variables
 float theta_gyr_M = 0;
 float phi_gyr_M = 0;
+
+
+//magnotometer related variables
+float x_mag = 0;
+float y_mag = 0;
+float psi_mag = 0;
+
 
 float theta_overall = 0;
 float phi_overall = 0;
@@ -46,11 +53,13 @@ millis_old = millis();
  
 void loop() {
   // put your main code here, to run repeatedly:
-uint8_t system, gyro, accel, mag = 0;
-myIMU.getCalibration(&system, &gyro, &accel, &mag);
+uint8_t system, gyro, accel, magn = 0;
+myIMU.getCalibration(&system, &gyro, &accel, &magn);
 
-imu::Vector<3> acc =myIMU.getVector(Adafruit_BNO055::VECTOR_ACCELEROMETER);
-imu::Vector<3> gyr =myIMU.getVector(Adafruit_BNO055::VECTOR_GYROSCOPE);
+imu::Vector<3> acc = myIMU.getVector(Adafruit_BNO055::VECTOR_ACCELEROMETER);
+imu::Vector<3> gyr = myIMU.getVector(Adafruit_BNO055::VECTOR_GYROSCOPE);
+imu::Vector<3> mag = myIMU.getVector(Adafruit_BNO055::VECTOR_MAGNETOMETER);
+
 
 theta_acc_M = atan2(acc.x()/9.8, acc.z()/9.8) * 180 / PI;
 phi_acc_M = atan2(acc.y()/9.8, acc.z()/9.8) * 180 / PI;
@@ -79,9 +88,16 @@ phi_overall = (phi_overall + gyr.x()*dt) * p1  + phi_acc_M * p2;
 // phi_overall = (phi_overall + gyr.x()*dt) * p1  + phi_acc_F_new * p2;
 
 
+//lesson no 10: using magnetometer
+float phi_overall_rad = phi_overall * PI / 180;
+float theta_overall_rad = theta_overall * PI / 180;
+x_mag = mag.x() * cos(theta_overall_rad) - mag.y() * sin(phi_overall_rad) * sin(theta_overall_rad) - mag.z() * cos(phi_overall_rad) * sin(theta_overall_rad);
+y_mag = mag.y() * cos(phi_overall_rad) - mag.z() * sin(phi_overall_rad);
+psi_mag = atan2(y_mag, x_mag) * 180 / PI;
 
 
 
+//printing the values
 Serial.print(acc.x()/9.8);
 Serial.print(",");
 Serial.print(acc.y()/9.8);
@@ -93,7 +109,7 @@ Serial.print(accel);
 Serial.print(",");
 Serial.print(gyro);
 Serial.print(",");
-Serial.print(mag);
+Serial.print(magn);
 Serial.print(",");
 Serial.print(system);
 Serial.print(",");
@@ -115,7 +131,12 @@ Serial.print(phi_gyr_M);
 Serial.print(",");
 Serial.print(theta_overall);
 Serial.print(",");
-Serial.println(phi_overall);
+Serial.print(phi_overall);
+
+Serial.print(",");
+Serial.println(psi_mag);
+
+
 
 theta_acc_F_old = theta_acc_F_new;      
 phi_acc_F_old = phi_acc_F_new;
