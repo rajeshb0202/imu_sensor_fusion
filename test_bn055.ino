@@ -29,7 +29,7 @@ unsigned long millis_old = 0;
 
 
 
-float p1 = 0.95;
+float p1 = 0.90;
 float p2 = 1 - p1;
 
 
@@ -72,6 +72,11 @@ phi_gyr_M = phi_gyr_M + gyr.x()*dt;
 //Lesson no 9: Complimentary Filter
 theta_overall = (theta_overall - gyr.y()*dt) * p1  + theta_acc_M * p2;
 phi_overall = (phi_overall + gyr.x()*dt) * p1  + phi_acc_M * p2;
+
+
+//Lesson no-9: experimentation of complimentary filter                      //using this resulted in lagging effect. Produced worse results than using only measued acc. values
+// theta_overall = (theta_overall - gyr.y()*dt) * p1  + theta_acc_F_new * p2;
+// phi_overall = (phi_overall + gyr.x()*dt) * p1  + phi_acc_F_new * p2;
 
 
 
